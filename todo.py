@@ -23,8 +23,7 @@ cursor.execute('''
         name TEXT,
         role TEXT,
         team TEXT,
-        contact TEXT,
-        departmen TEXT
+        contact TEXT
               
     )
 ''')
@@ -239,7 +238,7 @@ if menu == "👥 Organizing Team":
     
     # Add Team Member Form
     with st.form("add_team_member_form"):
-        col1, col2, col3, col4, col5 = st.columns(5)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
             name = st.text_input("Name (Roll No.)")
         with col2:
@@ -259,14 +258,14 @@ if menu == "👥 Organizing Team":
         with col4:
             contact = st.text_input("Contact (Phone/Email)")
         
-        with col5:
-            department = st.text_input("department")   
+        # with col5:
+        #     department = st.text_input("department")   
         
         submitted = st.form_submit_button("Add Team Member")
 
         if submitted and name and role:
-            cursor.execute("INSERT INTO organizing_team (name, role, team, contact, department) VALUES (?, ?, ?, ?, ?)",
-                           (name, role, team, contact, department))
+            cursor.execute("INSERT INTO organizing_team (name, role, team, contact) VALUES (?, ?, ?, ?)",
+                           (name, role, team, contact))
             conn.commit()
             st.success(f"Team Member '{name}' added successfully!")
         elif submitted:
