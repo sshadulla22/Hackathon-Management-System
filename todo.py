@@ -174,7 +174,8 @@ elif menu == "Organizing Team":
                 "Marketing Team",
                 "Sponsorship Team",
                 "Hospitality Team",
-                "Media Team"
+                "Media Team",
+                "Documentation Team"
             ])
         with col4:
             contact = st.text_input("Contact (Phone/Email)")
@@ -247,7 +248,8 @@ elif menu == "Tasks Management":
             "Marketing Team",
             "Sponsorship Team",
             "Hospitality Team",
-            "Media Team"
+            "Media Team",
+            "Documentation Team"
         ])
         
         submitted = st.form_submit_button("Assign Task")
