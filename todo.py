@@ -954,7 +954,7 @@ def create_document(content, notice, alignment, font, signatures, file_name="out
 
 # Streamlit interface for the user to input document content and settings
 def main():
-    st.title("Custom PDF Document Generator with Centered Signatures")
+    st.title("Rapid Official Document Generator")
 
     # Inputs for left and right content
     content_left = st.text_area("Left Content", "Ref: AIKTC/ADMIN/2025/000")
@@ -984,7 +984,7 @@ def main():
         create_document(content, notice, alignment, font, signatures, "generated_document_with_centered_signatures.pdf")
 
         # Provide a download button
-        with open("generated_document_with_centered_signatures.pdf", "rb") as pdf_file:
+        with open("RODG_NOTICE", "rb") as pdf_file:
             st.download_button(
                 label="Download Document",
                 data=pdf_file,
