@@ -855,3 +855,144 @@ elif menu == "📝 Attendence":
                 file_name="attendance_report.pdf",
                 mime="application/pdf",
             )
+import streamlit as st
+from fpdf import FPDF
+
+# Custom PDF class that extends FPDF
+class CustomPDF(FPDF):
+    def header(self):
+        # Add a custom header
+        try:
+            self.image("header.png", x=10, y=5, w=190)  # Adjust as needed
+        except FileNotFoundError:
+            self.set_font("Arial", 'B', 12)
+            self.cell(0, 10, "Header Image Missing - Add header.png", 0, 1, 'C')
+        self.set_y(45)  # Set position for content start below the header
+
+    def footer(self):
+        # Add a custom footer
+        self.set_y(-20)  # Adjust position for the footer
+        try:
+            self.image("footer.png", x=10, y=self.get_y(), w=200)  # Adjust as needed
+        except FileNotFoundError:
+            self.set_font("Arial", size=8)
+            self.cell(0, 10, "Footer Image Missing - Add footer.png", 0, 1, 'C')
+        self.set_font("Arial", size=8)
+        self.cell(0, 10, f"Page {self.page_no()}", 0, 1, 'C')  # Centered page number
+
+# Function to create the document
+def create_document(content, notice, alignment, font, signatures, file_name="output.pdf"):
+    # Create an instance of CustomPDF
+    pdf = CustomPDF()
+
+    # Add a page
+    pdf.add_page()
+
+    # Set font
+    pdf.set_font(font, size=12)
+
+    # Add a function to increase font size and set font type
+    def set_custom_font(pdf, font_size=12, font_type="Times", is_bold=False):
+        if is_bold:
+            pdf.set_font(font_type, 'B', font_size)  # Bold font
+        else:
+            pdf.set_font(font_type, '', font_size)  # Regular font
+
+    # Add left and right content
+    pdf.set_xy(10, 50)  # Below header
+
+    # Set font size and type for left content
+    set_custom_font(pdf, font_size=15, font_type="Times")  # Adjust the font size as needed
+    pdf.multi_cell(90, 10, content[0])  # Left content
+
+    # Increase horizontal gap by adjusting the X-coordinate for the right content
+    gap = 55  # Increase the gap between left and right content
+
+    # Set font size and type for right content
+    set_custom_font(pdf, font_size=14, font_type="Times")  # Adjust the font size as needed
+    pdf.set_xy(110 + gap, 50)  # Adjust the X position after left content
+    pdf.multi_cell(90, 10, content[1])  # Right content
+
+    # Add notice with reduced gap
+    pdf.set_xy(10, 70)  # Reduced the Y position to bring notice closer to the content
+    pdf.set_font(font, 'B', 15)  # Bold for notice
+    pdf.multi_cell(0, 10, notice, align="C")
+
+    # Add user content, reducing the gap between notice and main content
+    pdf.set_xy(10, 88)  # Reduced the Y position to bring content closer to the notice
+    pdf.set_font(font, size=12)
+    if alignment == "Left":
+        pdf.multi_cell(0, 6, content[2], align="L")
+    elif alignment == "Center":
+        pdf.multi_cell(0, 6, content[2], align="C")
+    elif alignment == "Right":
+        pdf.multi_cell(0, 6, content[2], align="R")
+    elif alignment == "Justify":
+        pdf.multi_cell(0, 6, content[2], align="J")
+
+    # Add signature section (centered horizontally on the page)
+    pdf.set_xy(10, 200)  # Position signatures below the main content
+    pdf.set_font(font, size=12)
+    total_signatures = len(signatures)
+    space_between_signatures = 60  # Adjust space between signatures
+
+    # Calculate the starting X position for center alignment
+    available_width = 190  # Total width of the page minus margins
+    total_width_needed = space_between_signatures * total_signatures
+    starting_x = (available_width - total_width_needed) / 2 + 10  # Adding left margin
+
+    for i, signature in enumerate(signatures):
+        name, designation = signature.split("\n")
+        x_position = starting_x + (i * space_between_signatures)  # Adjust spacing between signatures
+        pdf.set_xy(x_position, 200)  # Name position
+        pdf.cell(50, 10, name, border=0, align='C')  # Name
+        pdf.set_xy(x_position, 205)  # Reduced gap between name and designation
+        pdf.cell(50, 10, designation, border=0, align='C')  # Designation
+
+    # Output the PDF to a file
+    pdf.output(file_name)
+
+# Streamlit interface for the user to input document content and settings
+def main():
+    st.title("Custom PDF Document Generator with Centered Signatures")
+
+    # Inputs for left and right content
+    content_left = st.text_area("Left Content", "Ref: AIKTC/ADMIN/2025/000")
+    content_right = st.text_input("Date", "Date: 00/00/0000")
+    notice = st.text_input("Notice", "Content Title")
+    main_content = st.text_area("Main Content", "This is the main content of the document.")
+    content = [content_left, content_right, main_content]
+
+    # Alignment options
+    alignment = st.selectbox("Text Alignment", ["Left", "Center", "Right", "Justify"])
+
+    # Font options
+    font = st.selectbox("Font", ["Arial", "Times", "Courier", "Helvetica", "Symbol"])
+
+    # Signature inputs
+    st.subheader("Signatures")
+    num_signatures = st.slider("Number of Signatures", 1, 4, 3)
+    signatures = []
+    for i in range(num_signatures):
+        name = st.text_input(f"Name for Signature {i + 1}", f"Name {i + 1}")
+        designation = st.text_input(f"Designation for Signature {i + 1}", f"Designation {i + 1}")
+        signatures.append(f"{name}\n{designation}")
+
+    # Button to generate document
+    if st.button("Generate Document"):
+        # Generate the document
+        create_document(content, notice, alignment, font, signatures, "generated_document_with_centered_signatures.pdf")
+
+        # Provide a download button
+        with open("generated_document_with_centered_signatures.pdf", "rb") as pdf_file:
+            st.download_button(
+                label="Download Document",
+                data=pdf_file,
+                file_name="generated_document_with_centered_signatures.pdf",
+                mime="application/pdf"
+            )
+
+        st.success("Document generated successfully!")
+
+if __name__ == "__main__":
+    main()
