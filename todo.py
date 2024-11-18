@@ -1,13 +1,17 @@
+from xml.dom.minidom import Document
 import streamlit as st
 import sqlite3
 from datetime import datetime
 import pandas as pd
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle  # Correct import here
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 import plotly.express as px
 from datetime import datetime, timedelta
+from fpdf import FPDF
+from docx import Document
 
 # Page Configurations
 st.set_page_config(page_title="Hackathon Management System", layout="wide")
@@ -23,7 +27,8 @@ cursor.execute('''
         name TEXT,
         role TEXT,
         team TEXT,
-        contact TEXT
+        contact TEXT,
+        departmen TEXT
               
     )
 ''')
@@ -96,7 +101,8 @@ menu = st.sidebar.radio(
         "👥 Organizing Team",
         "✅ Tasks Management",
         "🛡️ Team Pages",
-        "📂 Export Data"
+        "📂 Export Data",
+        "📝 Attendence"        # New Menu Item Added
     ]
 )
 
@@ -111,6 +117,8 @@ elif menu == "🛡️ Team Pages":
     st.sidebar.markdown("<p style='font-size: 14px; color: #777;'>Collaborate and communicate with your team members.</p>", unsafe_allow_html=True)
 elif menu == "📂 Export Data":
     st.sidebar.markdown("<p style='font-size: 14px; color: #777;'>Download reports and data files easily.</p>", unsafe_allow_html=True)
+elif menu == "💬 Attendence":
+    st.sidebar.markdown("<p style='font-size: 14px; color: #777;'>Get help and support for any queries you may have.</p>", unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
 
@@ -162,6 +170,7 @@ if menu == "📈 Dashboard":
     bar_fig = px.bar(teams_df, x="Team", y="Task Count", title="Tasks Distribution by Team", color="Team")
     st.plotly_chart(bar_fig)
 
+
     # # Countdown Timer
     # st.subheader("Time Remaining until Hackathon")
 
@@ -186,6 +195,12 @@ if menu == "📈 Dashboard":
     #     st.progress(progress)
     # else:
     #     st.write("No tasks available.")
+
+
+
+
+
+
 
     # Custom CSS for enhanced UI
     st.markdown(
@@ -229,6 +244,10 @@ if menu == "📈 Dashboard":
         </style>
         """,
         unsafe_allow_html=True
+
+
+
+        
     )
 
 
@@ -238,7 +257,7 @@ if menu == "👥 Organizing Team":
     
     # Add Team Member Form
     with st.form("add_team_member_form"):
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
             name = st.text_input("Name (Roll No.)")
         with col2:
@@ -258,14 +277,14 @@ if menu == "👥 Organizing Team":
         with col4:
             contact = st.text_input("Contact (Phone/Email)")
         
-        # with col5:
-        #     department = st.text_input("department")   
+        with col5:
+            department = st.text_input("department")   
         
         submitted = st.form_submit_button("Add Team Member")
 
         if submitted and name and role:
-            cursor.execute("INSERT INTO organizing_team (name, role, team, contact) VALUES (?, ?, ?, ?)",
-                           (name, role, team, contact))
+            cursor.execute("INSERT INTO organizing_team (name, role, team, contact, department) VALUES (?, ?, ?, ?, ?)",
+                           (name, role, team, contact, department))
             conn.commit()
             st.success(f"Team Member '{name}' added successfully!")
         elif submitted:
@@ -314,6 +333,9 @@ if menu == "👥 Organizing Team":
                 st.experimental_rerun()  # Refresh the page to reflect changes
     else:
         st.write("No team members found.")
+
+
+        
     # # Display Tasks
     # st.subheader("Task List")
     # tasks = pd.read_sql_query("SELECT * FROM tasks", conn)
@@ -475,8 +497,11 @@ elif menu == "🛡️ Team Pages":
 
             except Exception as e:
                 st.error(f"Error fetching tasks: {e}")
+
+
 # Export Data (CSV/PDF/DOCX)
-elif menu == "📂 Export Data":
+
+if menu == "📂 Export Data":
     st.title("Export Hackathon Data")
 
     st.markdown("""
@@ -492,155 +517,341 @@ elif menu == "📂 Export Data":
         st.subheader(f"Export Data for Team: {selected_team}")
 
         # Fetch team-specific data
-        team_data = pd.read_sql_query(
-            f"SELECT * FROM organizing_team WHERE team = '{selected_team}'", conn
-        )
-
-        # Display option to download team data
-        st.markdown("### Download Team Data")
-
-        # Download team data as CSV
-        st.download_button(
-            label="Download Team Data as CSV",
-            data=team_data.to_csv(index=False),
-            file_name=f"{selected_team}_team_data.csv",
-            mime="text/csv"
-        )
+        team_data = pd.read_sql_query(f"SELECT * FROM organizing_team WHERE team = '{selected_team}'", conn)
 
         # Fetch task-specific data for the selected team
-        tasks_data = pd.read_sql_query(
-            f"SELECT * FROM tasks WHERE team = '{selected_team}'", conn
-        )
+        tasks_data = pd.read_sql_query(f"SELECT * FROM tasks WHERE team = '{selected_team}'", conn)
 
-        # Display option to download task data
+        # Display options to download team data
+        st.markdown("### Download Team Data")
+
+        # Arrange download buttons in columns (side by side)
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            # Download team data as CSV
+            st.download_button(
+                label="Download Team Data as CSV",
+                data=team_data.to_csv(index=False),
+                file_name=f"{selected_team}_team_data.csv",
+                mime="text/csv"
+            )
+
+        with col2:
+            # Download team data as PDF
+            if st.button("Team Data as PDF"):
+                def add_header_footer(canvas, doc):
+                    header_path = "header.png"  # path to the header image
+                    footer_path = "footer.png"  # path to the footer image
+                    canvas.drawImage(header_path, 5, 740, width=550, height=95, preserveAspectRatio=True)
+                    canvas.drawImage(footer_path, 40, 40, width=500, height=50, preserveAspectRatio=True)
+
+                def create_pdf(data, file_name, title):
+                    pdf = BytesIO()
+                    doc = SimpleDocTemplate(pdf, pagesize=A4)
+
+                    # Add custom title style with more space after it to avoid overlap with the header
+                    styles = getSampleStyleSheet()
+                    title_style = ParagraphStyle(
+                        "TitleStyle",
+                        parent=styles['Title'],
+                        fontSize=0,
+                        spaceBefore=110,  # Add space before title to push it down from the header
+                        spaceAfter=20,   # Add space after title for separation from table
+                        textColor=colors.black
+                    )
+
+                    # Create the title and content for the document
+                    content = [Paragraph(f"<b>{title}</b>", title_style)]
+                    
+                    # Prepare table data
+                    table_data = [list(data.columns)] + data.values.tolist()
+                    table = Table(table_data)
+
+                    # Style the table
+                    table.setStyle(TableStyle([
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke),
+                        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                        ("SIZE", (0, 0), (-1, -1), 10),
+                        ("BOX", (0, 0), (-1, -1), 0.25, colors.black),
+                        ("GRID", (0, 0), (-1, -1), 0.25, colors.black)
+                    ]))
+
+                    # Add the table to content
+                    content.append(table)
+
+                    # Build the PDF
+                    doc.build(content, onFirstPage=add_header_footer, onLaterPages=add_header_footer)
+                    pdf.seek(0)
+
+                    # Download the PDF
+                    st.download_button(
+                        label="Download",
+                        data=pdf,
+                        file_name=file_name,
+                        mime="application/pdf"
+                    )
+
+                # Call create_pdf for Team Data
+                create_pdf(team_data, f"{selected_team}_team_data.pdf", f"Team Data for {selected_team}")
+
+        with col3:
+            # Download team data as DOCX
+            if st.button("Download Team Data as DOCX"):
+                doc = Document()
+                doc.add_heading(f"Team: {selected_team}", level=1)
+
+                # Add table for team data
+                table = doc.add_table(rows=1, cols=len(team_data.columns))
+                for i, column_name in enumerate(team_data.columns):
+                    table.cell(0, i).text = str(column_name)
+
+                for row in team_data.itertuples(index=False):
+                    cells = table.add_row().cells
+                    for i, value in enumerate(row):
+                        cells[i].text = str(value)
+
+                doc_file = BytesIO()
+                doc.save(doc_file)
+                doc_file.seek(0)
+                st.download_button(
+                    label="Download Team Data as DOCX",
+                    data=doc_file,
+                    file_name=f"{selected_team}_team_data.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+
+        # Display options to download task data
         st.markdown("### Download Task Data")
 
-        # Download tasks data as CSV
-        st.download_button(
-            label="Download Tasks Data as CSV",
-            data=tasks_data.to_csv(index=False),
-            file_name=f"{selected_team}_tasks_data.csv",
-            mime="text/csv"
+        # Arrange download buttons in columns (side by side)
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            # Download tasks data as CSV
+            st.download_button(
+                label="Download Tasks Data as CSV",
+                data=tasks_data.to_csv(index=False),
+                file_name=f"{selected_team}_tasks_data.csv",
+                mime="text/csv"
+            )
+
+        with col2:
+            # Download tasks data as PDF
+            if st.button("Tasks Data as PDF"):
+                def add_header_footer(canvas, doc):
+                    header_path = "header.png"  # path to the header image
+                    footer_path = "footer.png"  # path to the footer image
+                    canvas.drawImage(header_path, 5, 740, width=550, height=95, preserveAspectRatio=True)
+                    canvas.drawImage(footer_path, 40, 40, width=500, height=50, preserveAspectRatio=True)
+                
+                def create_pdf(data, file_name, title):
+                    pdf = BytesIO()
+                    doc = SimpleDocTemplate(pdf, pagesize=A4)
+
+                    # Add custom title style with more space after it to avoid overlap with the header
+                    styles = getSampleStyleSheet()
+                    title_style = ParagraphStyle(
+                        "TitleStyle",
+                        parent=styles['Title'],
+                        fontSize=0,
+                        spaceBefore=20,  # Add space before title to push it down from the header
+                        spaceAfter=24,   # Add space after title for separation from table
+                        textColor=colors.black
+                    )
+
+                    content = [Paragraph(f"<b>{title}</b>", title_style)]
+
+                    # Prepare table data
+                    table_data = [list(data.columns)] + data.values.tolist()
+                    table = Table(table_data)
+
+                    # Style the table
+                    table.setStyle(TableStyle([
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke),
+                        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                        ("SIZE", (0, 0), (-1, -1), 10),
+                        ("BOX", (0, 0), (-1, -1), 0.25, colors.black),
+                        ("GRID", (0, 0), (-1, -1), 0.25, colors.black)
+                    ]))
+
+                    content.append(table)
+
+                    # Build the PDF
+                    doc.build(content, onFirstPage=add_header_footer, onLaterPages=add_header_footer)
+                    pdf.seek(0)
+
+                    # Download the PDF
+                    st.download_button(
+                        label="Download",
+                        data=pdf,
+                        file_name=file_name,
+                        mime="application/pdf"
+                    )
+
+                # Call create_pdf for Task Data
+                create_pdf(tasks_data, f"{selected_team}_tasks_data.pdf", f"Tasks Data for {selected_team}")
+
+        with col3:
+            # Download tasks data as DOCX
+            if st.button("Download Tasks Data as DOCX"):
+                doc = Document()
+                doc.add_heading(f"Tasks for Team: {selected_team}", level=1)
+
+                # Add table for tasks data
+                table = doc.add_table(rows=1, cols=len(tasks_data.columns))
+                for i, column_name in enumerate(tasks_data.columns):
+                    table.cell(0, i).text = str(column_name)
+
+                for row in tasks_data.itertuples(index=False):
+                    cells = table.add_row().cells
+                    for i, value in enumerate(row):
+                        cells[i].text = str(value)
+
+                doc_file = BytesIO()
+                doc.save(doc_file)
+                doc_file.seek(0)
+                st.download_button(
+                    label="Download Tasks Data as DOCX",
+                    data=doc_file,
+                    file_name=f"{selected_team}_tasks_data.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+
+# Attendence'
+elif menu == "📝 Attendence":
+    st.sidebar.markdown("<p style='font-size: 14px; color: #777;'>Get help and support for any queries you may have.</p>", unsafe_allow_html=True)
+
+    # Hackathon Attendance System
+    if "attendance_data" not in st.session_state:
+        st.session_state["attendance_data"] = pd.DataFrame(
+            columns=["Member Name", "Roll No", "Department", "Year", "Team", "Role", "Checked In"]
         )
 
-        # Option for PDF Downloads
-        st.markdown("### PDF Downloads")
-        st.info("You can download the data as a formatted PDF for printing or offline review.")
+    # Title
+    st.title("Hackathon Attendance System")
 
-        # Download team data as PDF
-        if st.button("Team Data as PDF"):
-            pdf = BytesIO()
-            doc = SimpleDocTemplate(pdf, pagesize=A4)
-
-            # Prepare table for PDF
-            table_data = [list(team_data.columns)]  # Add headers
-            table_data += team_data.values.tolist()  # Add rows
-
-            table = Table(table_data)
-            table.setStyle(TableStyle([
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-                ("BACKGROUND", (0, 0), (-1, 0), colors.darkblue),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("SIZE", (0, 0), (-1, -1), 10),
-                ("BOX", (0, 0), (-1, -1), 0.25, colors.black),
-                ("GRID", (0, 0), (-1, -1), 0.25, colors.black)
-            ]))
-
-            # Build PDF
-            doc.build([table])
-            pdf.seek(0)
-            st.download_button(
-                label="Download",
-                data=pdf,
-                file_name=f"{selected_team}_team_data.pdf",
-                mime="application/pdf"
+    # Section: Member Registration
+    st.header("Register Participants")
+    with st.form("registration_form"):
+        name = st.text_input("Member Name")
+        roll_no = st.text_input("Roll No")
+        department = st.selectbox("Department", ["CO", "AIML", "DS", "ECS", "Other"])
+        year = st.selectbox("Year", ["1st Year", "2nd Year", "3rd Year", "4th Year"])
+        team = st.selectbox(
+            "Team",
+            ["Management", "Creative", "Sponsorship", "Marketing", "Design", "Tech", "Hospitality", "Media", "Documentation"],
+        )
+        role = st.selectbox("Role", ["Event Head", "Guide", "Team Lead", "Member", "Volunteer"])
+        submitted = st.form_submit_button("Register")
+        if submitted:
+            new_entry = {
+                "Member Name": name,
+                "Roll No": roll_no,
+                "Department": department,
+                "Year": year,
+                "Team": team,
+                "Role": role,
+                "Checked In": True,  # Automatically mark attendance
+            }
+            st.session_state["attendance_data"] = pd.concat(
+                [st.session_state["attendance_data"], pd.DataFrame([new_entry])], ignore_index=True
             )
+            st.success(f"Registered {name} in Team {team}! Attendance has been automatically marked.")
 
-        # Download tasks data as PDF
-        if st.button("Tasks Data as PDF"):
-            pdf = BytesIO()
-            doc = SimpleDocTemplate(pdf, pagesize=A4)
+    # Section: Show Attendance Data
+    st.header("Attendance Data")
+    if not st.session_state["attendance_data"].empty:
+        st.dataframe(st.session_state["attendance_data"])
 
-            # Prepare table for tasks PDF
-            table_data = [list(tasks_data.columns)]  # Add headers
-            table_data += tasks_data.values.tolist()  # Add rows
+    # Section: Download Attendance as PDF
+    st.header("Download Attendance")
+    if st.button("Download Attendance as PDF"):
 
-            table = Table(table_data)
-            table.setStyle(TableStyle([
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-                ("BACKGROUND", (0, 0), (-1, 0), colors.darkblue),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("SIZE", (0, 0), (-1, -1), 10),
-                ("BOX", (0, 0), (-1, -1), 0.25, colors.black),
-                ("GRID", (0, 0), (-1, -1), 0.25, colors.black)
-            ]))
+        class CustomPDF(FPDF):
+            def header(self):
+                self.image("header.png", x=10, y=5, w=190)
+                self.set_y(45)  # Adjust content start position below the header
 
-            # Build PDF for tasks data
-            doc.build([table])
-            pdf.seek(0)
+            def footer(self):
+                self.set_y(-20)  # Adjust position of the footer above the bottom
+                self.image("footer.png", x=10, y=self.get_y(), w=200)
+                self.set_font("Arial", size=8)
+                self.cell(0, 10, f"Page {self.page_no()}", align="C")
+
+        pdf = CustomPDF()
+        pdf.add_page()
+
+        # Add Title
+        pdf.set_font("Arial", style="B", size=14)
+        pdf.cell(200, 10, txt="Hackathon Attendance Report", ln=True, align="C")
+        pdf.ln(1)
+
+        # Add Date
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, txt=f"Date: {current_date}", ln=True, align="L")
+        pdf.ln(1)
+
+        # Add Attendance Taken By
+        attendance_taken_by = st.text_input("Attendance Taken By", "Shadulla Shaikh - Event Head")
+        pdf.cell(200, 10, txt=f"Attendance Taken By: {attendance_taken_by}", ln=True, align="L")
+        pdf.ln(1)
+
+        # Define column headers and widths
+        headers = ["Sr No", "Member Name", "Roll No", "Department", "Year", "Team", "Role", "Checked In"]
+        column_widths = [10, 38, 18, 25, 18, 28, 28, 25]  # Adjust widths as needed
+
+        # Add table headers
+        pdf.set_font("Arial", style="B", size=10)
+
+        def add_table_headers():
+            for header, width in zip(headers, column_widths):
+                pdf.cell(width, 10, header, border=1, align="C")
+            pdf.ln()
+
+        # Add rows to the PDF
+        pdf.set_font("Arial", size=10)
+        max_rows_per_page = 40  # Adjust rows per page as needed
+        row_count = 0
+        sr_no = 1  # Initialize serial number
+
+        # Loop through the rows and add them to the PDF
+        add_table_headers()  # Add headers for the first page
+
+        for index, row in st.session_state["attendance_data"].iterrows():
+            # Check if a new page is needed and add page break if needed
+            if row_count == max_rows_per_page:
+                pdf.add_page()
+                add_table_headers()  # Re-add headers for the new page
+                row_count = 0
+
+            # Add serial number and row data
+            pdf.cell(column_widths[0], 10, str(sr_no), border=1, align="C")  # Add serial number
+            for data, width in zip(row.values, column_widths[1:]):  # Skip Sr No width
+                pdf.cell(width, 10, str(data), border=1, align="C")
+            pdf.ln()
+
+            row_count += 1
+            sr_no += 1  # Increment serial number
+
+        # Add Footer with Signature Section
+        pdf.ln(10)
+        pdf.cell(90, 10, txt="Event Head Signature:", ln=False, align="L")
+        pdf.cell(90, 10, txt="Event Faculty Coordinator Signature:", ln=True, align="R")
+        pdf.ln(5)
+        pdf.cell(90, 10, txt="_____________________________", ln=False, align="L")
+        pdf.cell(90, 10, txt="_____________________________", ln=True, align="R")
+
+        # Save and download the PDF
+        pdf_file = "attendance_report.pdf"
+        pdf.output(pdf_file)
+        with open(pdf_file, "rb") as file:
             st.download_button(
-                label="Download",
-                data=pdf,
-                file_name=f"{selected_team}_tasks_data.pdf",
-                mime="application/pdf"
+                label="Download PDF",
+                data=file,
+                file_name="attendance_report.pdf",
+                mime="application/pdf",
             )
-
-        # Option for DOCX Downloads
-        st.markdown("### DOCX Downloads")
-        st.info("You can download the data as DOCX files, which can be opened in Microsoft Word.")
-
-        # Download team data as DOCX
-        if st.button("Download Team Data as DOCX"):
-            from docx import Document
-
-            doc = Document()
-            doc.add_heading(f"Team: {selected_team}", level=1)
-
-            # Add table for team data
-            table = doc.add_table(rows=1, cols=len(team_data.columns))
-            for i, column_name in enumerate(team_data.columns):
-                table.cell(0, i).text = str(column_name)
-
-            for row in team_data.itertuples(index=False):
-                cells = table.add_row().cells
-                for i, value in enumerate(row):
-                    cells[i].text = str(value)
-
-            doc_file = BytesIO()
-            doc.save(doc_file)
-            doc_file.seek(0)
-            st.download_button(
-                label="Download Team Data as DOCX",
-                data=doc_file,
-                file_name=f"{selected_team}_team_data.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
-
-        # Download tasks data as DOCX
-        if st.button("Download Tasks Data as DOCX"):
-            from docx import Document
-
-            doc = Document()
-            doc.add_heading(f"Tasks for Team: {selected_team}", level=1)
-
-            # Add table for tasks data
-            table = doc.add_table(rows=1, cols=len(tasks_data.columns))
-            for i, column_name in enumerate(tasks_data.columns):
-                table.cell(0, i).text = str(column_name)
-
-            for row in tasks_data.itertuples(index=False):
-                cells = table.add_row().cells
-                for i, value in enumerate(row):
-                    cells[i].text = str(value)
-
-            doc_file = BytesIO()
-            doc.save(doc_file)
-            doc_file.seek(0)
-            st.download_button(
-                label="Download Tasks Data as DOCX",
-                data=doc_file,
-                file_name=f"{selected_team}_tasks_data.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
-
-
