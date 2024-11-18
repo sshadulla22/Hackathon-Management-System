@@ -1,6 +1,7 @@
 streamlit
 pandas
-plotly
+sqlite3
 reportlab
+plotly
 fpdf
-
+python-docx
