@@ -261,7 +261,7 @@ if menu == "👥 Organizing Team":
         with col1:
             name = st.text_input("Name (Roll No.)")
         with col2:
-            role = st.selectbox("Role", ["Event Head", "Guide", "Team Lead", "Member", "Volunteer","Faculty Co-ordinator"])
+            role = st.selectbox("Role", ["Organiser", "Guide", "Team Lead", "Member", "Volunteer","Faculty Co-ordinator"])
         with col3:
             team = st.selectbox("Team Name", [
                 "Event Management Team",
