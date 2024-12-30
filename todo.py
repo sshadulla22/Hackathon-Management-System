@@ -2,6 +2,7 @@ from tkinter import font
 from xml.dom.minidom import Document
 import streamlit as st
 import sqlite3
+import _tkinter # If this fails your Python may not be configured for Tk
 from datetime import datetime
 import pandas as pd
 from io import BytesIO
