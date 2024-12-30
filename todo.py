@@ -148,11 +148,18 @@ if menu == "📈 Dashboard":
     # Layout for displaying stats in a more organized way
     col1, col2, col3 = st.columns(3)
     
-    # Fetch Stats
-    team_count = cursor.execute("SELECT COUNT(*) FROM organizing_team").fetchone()[0]
-    pending_tasks = cursor.execute("SELECT COUNT(*) FROM tasks WHERE status='Pending'").fetchone()[0]
-    completed_tasks = cursor.execute("SELECT COUNT(*) FROM tasks WHERE status='Completed'").fetchone()[0]
+# Fetch Stats
+team_count = cursor.execute("SELECT COUNT(*) FROM organizing_team").fetchone()[0]
+pending_tasks = cursor.execute("SELECT COUNT(*) FROM tasks WHERE status='Pending'").fetchone()[0]
+completed_tasks = cursor.execute("SELECT COUNT(*) FROM tasks WHERE status='Completed'").fetchone()[0]
 
+# Output the results
+print(f"Total teams: {team_count}")
+print(f"Pending tasks: {pending_tasks}")
+print(f"Completed tasks: {completed_tasks}")
+
+# Close the connection
+conn.close()
     # Display Stats with Metrics
     with col1:
         st.metric("Total Organizing Team Members", team_count)
