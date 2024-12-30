@@ -286,8 +286,7 @@ if menu == "👥 Organizing Team":
         submitted = st.form_submit_button("Add Team Member")
 
         if submitted and name and role:
-            cursor.execute("INSERT INTO organizing_team (name, role, team, contact, department) VALUES (?, ?, ?, ?, ?)",
-                           (name, role, team, contact, department))
+            cursor.execute("INSERT INTO organizing_team (name, role, team, contact, department) VALUES (?, ?, ?, ?, ?)",(name, role, team, contact, department))
             conn.commit()
             st.success(f"Team Member '{name}' added successfully!")
         elif submitted:
