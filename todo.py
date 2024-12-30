@@ -1,3 +1,4 @@
+from tkinter import font
 from xml.dom.minidom import Document
 import streamlit as st
 import sqlite3
@@ -31,7 +32,10 @@ cursor.execute('''
         role TEXT,
         team TEXT,
         contact TEXT,
-        departmen TEXT )''')
+        departmen TEXT
+              
+    )
+''')
 
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS tasks (
@@ -261,7 +265,7 @@ if menu == "👥 Organizing Team":
         with col1:
             name = st.text_input("Name (Roll No.)")
         with col2:
-            role = st.selectbox("Role", ["Organiser", "Guide", "Team Lead", "Member", "Volunteer","Faculty Co-ordinator"])
+            role = st.selectbox("Role", ["Event Head", "Guide", "Team Lead", "Member", "Volunteer","Faculty Co-ordinator"])
         with col3:
             team = st.selectbox("Team Name", [
                 "Event Management Team",
@@ -282,47 +286,13 @@ if menu == "👥 Organizing Team":
         
         submitted = st.form_submit_button("Add Team Member")
 
-# Connect to the database
-conn = sqlite3.connect("/tmp/database_name.db")  # Use /tmp for Streamlit Cloud
-cursor = conn.cursor()
-
-# Create the table if it doesn't exist
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS organizing_team (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    role TEXT NOT NULL,
-    team TEXT,
-    contact TEXT,
-    department TEXT
-)
-""")
-conn.commit()
-
-# Streamlit form
-st.title("Organizing Team Registration")
-with st.form("organizing_team_form"):
-    name = st.text_input("Name")
-    role = st.text_input("Role")
-    team = st.text_input("Team")
-    contact = st.text_input("Contact")
-    department = st.text_input("Department")
-    submitted = st.form_submit_button("Submit")
-
-# Insert data into the database
-if submitted and name and role:
-    try:
-        cursor.execute("""
-        INSERT INTO organizing_team (name, role, team, contact, department) 
-        VALUES (?, ?, ?, ?, ?)
-        """, (name, role, team, contact, department))
-        conn.commit()
-        st.success("Data successfully added!")
-    except sqlite3.Error as e:
-        st.error(f"An error occurred: {e}")
-else:
-    if submitted:
-        st.error("Name and Role are required fields!")
+        if submitted and name and role:
+            cursor.execute("INSERT INTO organizing_team (name, role, team, contact, department) VALUES (?, ?, ?, ?, ?)",
+                           (name, role, team, contact, department))
+            conn.commit()
+            st.success(f"Team Member '{name}' added successfully!")
+        elif submitted:
+            st.error("Name and Role are required fields!")
 
     # Displaying Organizing Team Members
     st.header("Organizing Team Members")
