@@ -1,3 +1,4 @@
+from tkinter import font
 from xml.dom.minidom import Document
 import streamlit as st
 import sqlite3
@@ -12,6 +13,9 @@ import plotly.express as px
 from datetime import datetime, timedelta
 from fpdf import FPDF
 from docx import Document
+from reportlab.pdfgen import canvas
+from sympy import content
+
 
 # Page Configurations
 st.set_page_config(page_title="Hackathon Management System", layout="wide")
@@ -855,6 +859,7 @@ elif menu == "📝 Attendence":
                 file_name="attendance_report.pdf",
                 mime="application/pdf",
             )
+
 import streamlit as st
 from fpdf import FPDF
 
@@ -954,7 +959,7 @@ def create_document(content, notice, alignment, font, signatures, file_name="out
 
 # Streamlit interface for the user to input document content and settings
 def main():
-    st.title("Rapid Official Document Generator")
+    st.title("Custom PDF Document Generator with Centered Signatures")
 
     # Inputs for left and right content
     content_left = st.text_area("Left Content", "Ref: AIKTC/ADMIN/2025/000")
@@ -984,7 +989,7 @@ def main():
         create_document(content, notice, alignment, font, signatures, "generated_document_with_centered_signatures.pdf")
 
         # Provide a download button
-        with open("RODG_NOTICE", "rb") as pdf_file:
+        with open("generated_document_with_centered_signatures.pdf", "rb") as pdf_file:
             st.download_button(
                 label="Download Document",
                 data=pdf_file,
@@ -996,3 +1001,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+# Footer
+st.markdown("<footer style='text-align: center; padding: 20px; background-color:Black; color: white;'>© 2024 MammoCare(Silent Echo). All rights reserved.</footer>", unsafe_allow_html=True)
