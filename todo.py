@@ -33,10 +33,7 @@ cursor.execute('''
         role TEXT,
         team TEXT,
         contact TEXT,
-        departmen TEXT
-              
-    )
-''')
+        departmen TEXT )''')
 
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS tasks (
