@@ -1,3 +1,4 @@
+from tkinter import font
 from xml.dom.minidom import Document
 import streamlit as st
 import sqlite3
@@ -19,40 +20,36 @@ from sympy import content
 # Page Configurations
 st.set_page_config(page_title="Hackathon Management System", layout="wide")
 
-# Connect to the SQLite database
-conn = sqlite3.connect('hackathon.db')  # You can use '/tmp/hackathon.db' for cloud environments like Streamlit
+# Database Setup
+conn = sqlite3.connect('hackathon.db')
 cursor = conn.cursor()
 
-# Create the organizing_team table if it doesn't exist
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS organizing_team (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    role TEXT NOT NULL,
-    team TEXT,
-    contact TEXT,
-    department TEXT
-)
-""")
+# Create Tables
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS organizing_team (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        role TEXT,
+        team TEXT,
+        contact TEXT
+              
+    )
+''')
 
-# Create the tasks table if it doesn't exist
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    task_name TEXT,
-    assigned_to TEXT,
-    due_date DATE,
-    status TEXT DEFAULT 'Pending',
-    priority TEXT,
-    team TEXT
-)
-""")
-
-# Commit changes and close the connection
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_name TEXT,
+        assigned_to TEXT,
+        due_date DATE,
+        status TEXT DEFAULT 'Pending',
+        priority TEXT,
+        team TEXT
+               
+    )
+''')
 conn.commit()
-conn.close()
 
-print("Tables created successfully!")
 
 # import streamlit as st
 
@@ -148,18 +145,11 @@ if menu == "📈 Dashboard":
     # Layout for displaying stats in a more organized way
     col1, col2, col3 = st.columns(3)
     
-# Fetch Stats
-team_count = cursor.execute("SELECT COUNT(*) FROM organizing_team").fetchone()[0]
-pending_tasks = cursor.execute("SELECT COUNT(*) FROM tasks WHERE status='Pending'").fetchone()[0]
-completed_tasks = cursor.execute("SELECT COUNT(*) FROM tasks WHERE status='Completed'").fetchone()[0]
+    # Fetch Stats
+    team_count = cursor.execute("SELECT COUNT(*) FROM organizing_team").fetchone()[0]
+    pending_tasks = cursor.execute("SELECT COUNT(*) FROM tasks WHERE status='Pending'").fetchone()[0]
+    completed_tasks = cursor.execute("SELECT COUNT(*) FROM tasks WHERE status='Completed'").fetchone()[0]
 
-# Output the results
-print(f"Total teams: {team_count}")
-print(f"Pending tasks: {pending_tasks}")
-print(f"Completed tasks: {completed_tasks}")
-
-# Close the connection
-conn.close()
     # Display Stats with Metrics
     with col1:
         st.metric("Total Organizing Team Members", team_count)
@@ -270,7 +260,7 @@ if menu == "👥 Organizing Team":
     
     # Add Team Member Form
     with st.form("add_team_member_form"):
-        col1, col2, col3, col4, col5 = st.columns(5)
+        col1, col2, col3, col4= st.columns(4)
         with col1:
             name = st.text_input("Name (Roll No.)")
         with col2:
@@ -289,14 +279,13 @@ if menu == "👥 Organizing Team":
             ])
         with col4:
             contact = st.text_input("Contact (Phone/Email)")
-        
-        with col5:
-            department = st.text_input("department")   
+         
         
         submitted = st.form_submit_button("Add Team Member")
 
         if submitted and name and role:
-            cursor.execute("INSERT INTO organizing_team (name, role, team, contact, department) VALUES (?, ?, ?, ?, ?)",(name, role, team, contact, department))
+            cursor.execute("INSERT INTO organizing_team (name, role, team, contact) VALUES (?, ?, ?, ?)",
+                           (name, role, team, contact))
             conn.commit()
             st.success(f"Team Member '{name}' added successfully!")
         elif submitted:
