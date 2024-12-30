@@ -282,9 +282,6 @@ if menu == "👥 Organizing Team":
         
         submitted = st.form_submit_button("Add Team Member")
 
-      import sqlite3
-import streamlit as st
-
 # Connect to the database
 conn = sqlite3.connect("/tmp/database_name.db")  # Use /tmp for Streamlit Cloud
 cursor = conn.cursor()
