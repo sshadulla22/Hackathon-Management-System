@@ -24,17 +24,17 @@ conn = sqlite3.connect('hackathon.db')
 cursor = conn.cursor()
 
 # Create Tables
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS organizing_team (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        role TEXT,
-        team TEXT,
-        contact TEXT,
-        departmen TEXT
-              
-    )
-''')
+# Ensure the table exists
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS organizing_team (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL,
+    team TEXT,
+    contact TEXT,
+    department TEXT
+)
+""")
 
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS tasks (
