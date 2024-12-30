@@ -4,4 +4,3 @@ reportlab
 plotly
 fpdf
 python-docx
-tkinter
