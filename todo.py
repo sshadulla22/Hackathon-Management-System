@@ -19,12 +19,11 @@ from sympy import content
 # Page Configurations
 st.set_page_config(page_title="Hackathon Management System", layout="wide")
 
-# Database Setup
-conn = sqlite3.connect('hackathon.db')
+# Connect to the SQLite database
+conn = sqlite3.connect('hackathon.db')  # You can use '/tmp/hackathon.db' for cloud environments like Streamlit
 cursor = conn.cursor()
 
-# Create Tables
-# Ensure the table exists
+# Create the organizing_team table if it doesn't exist
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS organizing_team (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,20 +35,24 @@ CREATE TABLE IF NOT EXISTS organizing_team (
 )
 """)
 
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS tasks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        task_name TEXT,
-        assigned_to TEXT,
-        due_date DATE,
-        status TEXT DEFAULT 'Pending',
-        priority TEXT,
-        team TEXT
-               
-    )
-''')
-conn.commit()
+# Create the tasks table if it doesn't exist
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_name TEXT,
+    assigned_to TEXT,
+    due_date DATE,
+    status TEXT DEFAULT 'Pending',
+    priority TEXT,
+    team TEXT
+)
+""")
 
+# Commit changes and close the connection
+conn.commit()
+conn.close()
+
+print("Tables created successfully!")
 
 # import streamlit as st
 
