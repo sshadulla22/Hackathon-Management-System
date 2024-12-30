@@ -261,20 +261,19 @@ if menu == "👥 Organizing Team":
     with st.form("add_team_member_form"):
         col1, col2, col3, col4= st.columns(4)
         with col1:
-            name = st.text_input("Name (Roll No.)")
+            name = st.text_input("Name (21CO51)")
         with col2:
-            role = st.selectbox("Role", ["Event Head", "Guide", "Team Lead", "Member", "Volunteer","Faculty Co-ordinator"])
+            role = st.selectbox("Role", ["Organiser", "Guide", "Team Lead", "Member", "Volunteer","Faculty Co-ordinator"])
         with col3:
             team = st.selectbox("Team Name", [
                 "Event Management Team",
-                "Creative Team",
+                "Decoration Team",
                 "Design Team",
-                "Marketing Team",
+                "Media & Marketing Team",
                 "Sponsorship Team",
                 "Hospitality Team",
-                "Media Team",
                 "Documentation Team",
-                "Tech Team"
+                "Techical Team"
             ])
         with col4:
             contact = st.text_input("Contact (Phone/Email)")
@@ -380,12 +379,11 @@ elif menu == "✅ Tasks Management":
             "Event Management Team",
             "Creative Team",
             "Design Team",
-            "Marketing Team",
+            "Media & Marketing Team",
             "Sponsorship Team",
             "Hospitality Team",
-            "Media Team",
             "Documentation Team",
-            "Tech Team"
+            "Techical Team"
         ])
         
         submitted = st.form_submit_button("Assign Task")
