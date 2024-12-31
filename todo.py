@@ -731,22 +731,61 @@ elif menu == "📝 Attendence":
     # Title
     st.title("Hackathon Attendance System")
 
-    # Section: Member Registration
+     # Section: Member Registration
     st.header("Register Participants")
     with st.form("registration_form"):
-        name = st.text_input("Member Name")
-        roll_no = st.text_input("Roll No")
+        # List of member names
+        member_names = [
+            "Shadulla Shaikh", "Ambar Qadri", "Iman Navdekar", "Basheer Bronkar", "Ali Khan",
+            "Zaid Shaikh", "Arman Khan", "Shreyas Nair", "Tausalkar Rayyan", "Aman Antuley",
+            "Khan Mohd Kaif", "Shaikh Aman Faiyyaj", "Khan Mohammad Moin", "Ambar Qadri", "Bhoir Priyanshi Jayendra",
+            "Iman Navdekar", "Bhosale Mrunal Ashok", "Aashish Chavan", "Shaikh Nabil Ahmed", "Hajwani Mueez Sajjad",
+            "Mondal Alamin Mannan", "Shaikh Arman Tayyab", "Darakhsha Ansari ", "Umar Mulla ", "Afreen Imam",
+            "Afshan Ansari", "Ayesha Pasha", "Anas Kapadia", "Reefa Bashir Mujawar ", "Saniya Chandiwala ",
+            "Saniya Pawale", "Quazi Yusra", "Sandesh Khargaonkar", "Sumaiya Dadnak ", "Shiakh Mohd Safwan ",
+            "Umar Syed", "Tanwar Misbah", "Mohd Qaif Siddique", "Abdulhaadi Khan ", "Mavia Ansari ",
+            "Siddique Sakharkar", "Mohd Muzammil Ansari", "Aarhaan Solkar", "Ali Khan", "Umair Faquih",
+            "Patel Ayesha Munjir"
+        ]
+
+        # Create a text input for search functionality
+        search_query = st.text_input("Search Member Name")
+
+        # Filter member names based on the search query
+        filtered_members = [name for name in member_names if search_query.lower() in name.lower()]
+
+        # Display the filtered names in a selectbox
+        selected_member = st.selectbox("Select Member Name", filtered_members)
+
+        # Display the selected member
+        st.write(f"You selected: {selected_member}")
+        
+        # Adding roll numbers as options in a select box with search functionality
+        roll_no = st.selectbox(
+            "Select Roll No (last digit of roll no)", 
+            options=[
+                "21C051", "21CO34", "21CO34", "23DCO01", "23DS21", "23DCO06", "22DCO03", "22CO32",
+                "23AI62", "23CO25", "22CO26", "23CO56", "23CO37", "21CO34", "22CO01", "21CO34", 
+                "22CO02", "22CO07", "23AI54", "23DS33", "23CO50", "23CO57", "24DBIT01", "23AI44", 
+                "23DS01", "22EE01", "23DCO03", "22DCO01", "22CO04", "22CO03", "22BIT08", "23BIT13", 
+                "22CO40", "23CO02", "23DS57", "22CO63", "23BIT15", "23CO48", "23CO34", "21CO14", 
+                "22BIT48", "22CO12", "22CO62", "23DS21", "23CO31", "23DCO04","21CO07"
+            ],
+            format_func=lambda x: x  # Displays the roll numbers directly
+        )
+
+        st.write(f"You selected Roll No: {roll_no}")
         department = st.selectbox("Department", ["CO", "AIML", "DS", "ECS", "Other"])
         year = st.selectbox("Year", ["1st Year", "2nd Year", "3rd Year", "4th Year"])
         team = st.selectbox(
             "Team",
             ["Management", "Creative", "Sponsorship", "Marketing", "Design", "Tech", "Hospitality", "Media", "Documentation"],
         )
-        role = st.selectbox("Role", ["Event Head", "Guide", "Team Lead", "Member", "Volunteer"])
+        role = st.selectbox("Role", ["Organizer", "Guide", "Team Lead", "Member", "Volunteer"])
         submitted = st.form_submit_button("Register")
         if submitted:
             new_entry = {
-                "Member Name": name,
+                "Member Name": selected_member,
                 "Roll No": roll_no,
                 "Department": department,
                 "Year": year,
@@ -757,7 +796,8 @@ elif menu == "📝 Attendence":
             st.session_state["attendance_data"] = pd.concat(
                 [st.session_state["attendance_data"], pd.DataFrame([new_entry])], ignore_index=True
             )
-            st.success(f"Registered {name} in Team {team}! Attendance has been automatically marked.")
+            st.success(f"Registered {selected_member} in Team {team}! Attendance has been automatically marked.")
+
 
     # Section: Show Attendance Data
     st.header("Attendance Data")
@@ -794,7 +834,7 @@ elif menu == "📝 Attendence":
         pdf.ln(1)
 
         # Add Attendance Taken By
-        attendance_taken_by = st.text_input("Attendance Taken By", "Shadulla Shaikh - Event Head")
+        attendance_taken_by = st.text_input("Attendance Taken By", "Management Team")
         pdf.cell(200, 10, txt=f"Attendance Taken By: {attendance_taken_by}", ln=True, align="L")
         pdf.ln(1)
 
@@ -853,7 +893,6 @@ elif menu == "📝 Attendence":
                 file_name="attendance_report.pdf",
                 mime="application/pdf",
             )
-
 import streamlit as st
 from fpdf import FPDF
 
